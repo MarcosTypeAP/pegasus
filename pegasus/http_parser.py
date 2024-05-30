@@ -77,7 +77,7 @@ class HTTPRequestParser:
         self._buf: bytes = b''
         self.completed: bool = False
 
-    def get_line(self, data: bytes) -> bytes | None:
+    def _get_line(self, data: bytes) -> bytes | None:
         line, *rest = data.split(b'\r\n', 1)
         if not rest:
             self._buf = line
@@ -95,8 +95,8 @@ class HTTPRequestParser:
 
         return line
 
-    def parse_status_line(self, data: bytes) -> None:
-        line = self.get_line(data)
+    def _parse_status_line(self, data: bytes) -> None:
+        line = self._get_line(data)
 
         if not line:
             return
@@ -121,8 +121,8 @@ class HTTPRequestParser:
 
         self._feed()
 
-    def parse_header(self, data: bytes) -> None:
-        line = self.get_line(data)
+    def _parse_header(self, data: bytes) -> None:
+        line = self._get_line(data)
 
         if not line:
             return
@@ -147,7 +147,7 @@ class HTTPRequestParser:
         self._headers.append((name, value))
         self._feed()
 
-    def feed_body(self, data: bytes) -> None:
+    def _feed_body(self, data: bytes) -> None:
         if self._content_length is None:
             raise ParsingError(http_status.HTTP_400_BAD_REQUEST, '"Content-Length" header required.')
 
@@ -171,14 +171,14 @@ class HTTPRequestParser:
             self._buf = b''
 
         if self._method is None:
-            self.parse_status_line(data)
+            self._parse_status_line(data)
             return
 
         if not self._reached_end_of_headers:
-            self.parse_header(data)
+            self._parse_header(data)
             return
 
-        self.feed_body(data)
+        self._feed_body(data)
 
     def feed(self, data: bytes) -> ParsingError | None:
         try:
